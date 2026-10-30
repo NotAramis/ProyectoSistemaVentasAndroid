@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F8F9FA">
+
+    <!-- Encabezado con Título, Fecha y Botón Historial -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:id="@+id/lblTitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nueva Orden"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#212529"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"/>
+        <Button
+            android:id="@+id/btnVerHistorial"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ver Historial"
+            android:layout_toEndOf="@id/lblTitulo"
+            android:layout_marginStart="8dp"/>
+        <TextView
+            android:id="@+id/lblFechaActual"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="16/10/2026"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#6C757D"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Seleccionar Cliente"
+        android:layout_marginBottom="8dp">
+        <AutoCompleteTextView android:id="@+id/spinnerClientes" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:hint="Vendedor" android:layout_marginEnd="8dp">
+            <AutoCompleteTextView android:id="@+id/spinnerVendedores" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:hint="Pago">
+            <AutoCompleteTextView android:id="@+id/spinnerPago" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none"/>
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:hint="Observaciones (Opcional)" android:layout_marginBottom="12dp">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/txtObservaciones" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textCapSentences"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"
+        app:cardCornerRadius="8dp" app:cardElevation="2dp" app:contentPadding="8dp" app:strokeColor="#DEE2E6" app:strokeWidth="1dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Producto" android:layout_marginEnd="8dp">
+                <AutoCompleteTextView android:id="@+id/spinnerProductos" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none"/>
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="70dp" android:layout_height="wrap_content" android:hint="Cant." android:layout_marginEnd="8dp">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/txtCantidad" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <Button
+                android:id="@+id/btnAgregarDetalle" style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content" android:layout_height="60dp" android:text="+" android:textSize="20sp" app:cornerRadius="8dp"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <ListView
+        android:id="@+id/listaDetalles" android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:divider="@android:color/transparent" android:dividerHeight="4dp" android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/lblTotal" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Total: Q0.00" android:textSize="20sp" android:textStyle="bold" android:textColor="#2E7D32" android:gravity="end" android:layout_marginBottom="8dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <Button
+            android:id="@+id/btnLimpiar" style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="55dp"
+            android:text="Limpiar" android:layout_marginEnd="8dp" app:cornerRadius="8dp" android:textColor="#6C757D"/>
+        <Button
+            android:id="@+id/btnGenerarPedido" style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="55dp"
+            android:text="Enviar" android:backgroundTint="#2E7D32" app:cornerRadius="8dp"/>
+    </LinearLayout>
+</LinearLayout>
