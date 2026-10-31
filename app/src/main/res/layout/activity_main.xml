@@ -9,38 +9,55 @@
 
     <!-- Encabezado con Título, Fecha y Botón Historial -->
     <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="380dp"
+        android:layout_height="68dp"
         android:layout_marginBottom="12dp">
+
         <TextView
             android:id="@+id/lblTitulo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Nueva Orden"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#212529"
+            android:layout_width="113dp"
+            android:layout_height="match_parent"
             android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"/>
+            android:layout_marginStart="0dp"
+            android:text="Nueva Orden"
+            android:textColor="#212529"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
         <Button
             android:id="@+id/btnVerHistorial"
             style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ver Historial"
+            android:layout_width="124dp"
+            android:layout_height="54dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginBottom="3dp"
             android:layout_toEndOf="@id/lblTitulo"
-            android:layout_marginStart="8dp"/>
+            android:text="Ver Historial" />
+
         <TextView
             android:id="@+id/lblFechaActual"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="16/10/2026"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#6C757D"
+            android:layout_width="103dp"
+            android:layout_height="24dp"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"/>
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="14dp"
+            android:layout_marginBottom="24dp"
+            android:text="16/10/2026"
+            android:textColor="#6C757D"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
     </RelativeLayout>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchModoConexion"
+        android:layout_width="245dp"
+        android:layout_height="7dp"
+        android:checked="true"
+        android:text="Modo Inalámbrico (Wi-Fi)"
+        android:textColor="@android:color/black"
+        android:textSize="16sp" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
@@ -100,8 +117,13 @@
     </com.google.android.material.card.MaterialCardView>
 
     <ListView
-        android:id="@+id/listaDetalles" android:layout_width="match_parent" android:layout_height="0dp"
-        android:layout_weight="1" android:divider="@android:color/transparent" android:dividerHeight="4dp" android:layout_marginBottom="8dp"/>
+        android:id="@+id/listaDetalles"
+        android:layout_width="match_parent"
+        android:layout_height="191dp"
+        android:layout_marginBottom="8dp"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="4dp" />
 
     <TextView
         android:id="@+id/lblTotal" android:layout_width="match_parent" android:layout_height="wrap_content"

@@ -9,6 +9,13 @@ import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.switchmaterial.SwitchMaterial
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Statement
@@ -22,9 +29,13 @@ data class ProductoInfo(val id: Int, val nombre: String, val precio: Double)
 
 class MainActivity : AppCompatActivity() {
 
+    // Configuración Conexión por Cable USB / Directa JDBC
     private val url = "jdbc:mysql://127.0.0.1:3306/sistema_ventas"
     private val user = "root"
     private val pass = "Bayonetta141102@."
+
+    // Configuración Conexión Inalámbrica Wi-Fi por API REST
+    private val urlApiWifi = "http://10.26.238.174:8080/api/"
 
     private val executor = Executors.newSingleThreadExecutor()
     private val detallesGuardados = mutableListOf<DetallePedido>()
@@ -46,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lblTotal: TextView
     private lateinit var txtCantidad: EditText
     private lateinit var txtObservaciones: EditText
+    private lateinit var switchModoConexion: SwitchMaterial
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +71,7 @@ class MainActivity : AppCompatActivity() {
         spinnerProductos = findViewById(R.id.spinnerProductos)
         txtCantidad = findViewById(R.id.txtCantidad)
         lblTotal = findViewById(R.id.lblTotal)
+        switchModoConexion = findViewById(R.id.switchModoConexion)
         val listaDetallesView = findViewById<ListView>(R.id.listaDetalles)
 
         val btnAgregarDetalle = findViewById<Button>(R.id.btnAgregarDetalle)
@@ -68,20 +81,20 @@ class MainActivity : AppCompatActivity() {
 
         btnVerHistorial.setOnClickListener {
             val intent = android.content.Intent(this, HistorialActivity::class.java)
+            // Pasa el estado del Switch (true = Wi-Fi, false = USB)
+            intent.putExtra("modoWifi", switchModoConexion.isChecked)
             startActivity(intent)
         }
 
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         lblFechaActual.text = sdf.format(Date())
 
-        // Opciones fijas para método de pago
         val pagos = arrayOf("Efectivo", "Tarjeta", "Transferencia", "Crédito")
         spinnerPago.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, pagos))
 
         adapterDetalles = ArrayAdapter(this, android.R.layout.simple_list_item_1, listaVisual)
         listaDetallesView.adapter = adapterDetalles
 
-        // Agregar detalle usando el precio dinámico de la BD
         btnAgregarDetalle.setOnClickListener {
             val seleccion = spinnerProductos.text.toString()
             val cantidadStr = txtCantidad.text.toString()
@@ -118,15 +131,113 @@ class MainActivity : AppCompatActivity() {
             limpiarFormulario()
         }
 
+        switchModoConexion.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                Toast.makeText(this, "Modo Wi-Fi (API REST) activado", Toast.LENGTH_SHORT).show()
+                cargarDatosDesdeAPI()
+            } else {
+                Toast.makeText(this, "Modo Cable USB (JDBC) activado", Toast.LENGTH_SHORT).show()
+                cargarDatosDesdeBD()
+            }
+        }
+
         btnGenerarPedido.setOnClickListener {
-            guardarPedidoEnBD()
+            if (switchModoConexion.isChecked) {
+                guardarPedidoDesdeAPI()
+            } else {
+                guardarPedidoEnBD()
+            }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Carga los datos más recientes de la BD cada vez que la pantalla se muestra
-        cargarDatosDesdeBD()
+        if (::switchModoConexion.isInitialized && switchModoConexion.isChecked) {
+            cargarDatosDesdeAPI()
+        } else {
+            cargarDatosDesdeBD()
+        }
+    }
+
+    private fun obtenerJsonApi(endpoint: String): String {
+        val url = URL(urlApiWifi + endpoint)
+        val conn = url.openConnection() as HttpURLConnection
+        conn.requestMethod = "GET"
+        conn.connectTimeout = 5000
+        conn.readTimeout = 5000
+
+        val reader = BufferedReader(InputStreamReader(conn.inputStream))
+        val response = StringBuilder()
+        var line: String?
+        while (reader.readLine().also { line = it } != null) {
+            response.append(line)
+        }
+        reader.close()
+        return response.toString()
+    }
+
+    private fun cargarDatosDesdeAPI() {
+        executor.execute {
+            try {
+                val jsonClientesStr = obtenerJsonApi("clientes")
+                val jsonArrayClientes = JSONArray(jsonClientesStr)
+                val tempClientes = mutableListOf<String>()
+                for (i in 0 until jsonArrayClientes.length()) {
+                    val obj = jsonArrayClientes.getJSONObject(i)
+                    val id = obj.getInt("id_cliente")
+                    val nombre = obj.getString("nombre")
+                    val apellido = obj.getString("apellido")
+                    tempClientes.add("$id - $nombre $apellido")
+                }
+
+                val jsonEmpleadosStr = obtenerJsonApi("empleados")
+                val jsonArrayEmpleados = JSONArray(jsonEmpleadosStr)
+                val tempVendedores = mutableListOf<String>()
+                for (i in 0 until jsonArrayEmpleados.length()) {
+                    val obj = jsonArrayEmpleados.getJSONObject(i)
+                    val id = obj.getInt("id_empleado")
+                    val nombre = obj.getString("nombre")
+                    val apellido = obj.getString("apellido")
+                    tempVendedores.add("$id - $nombre $apellido")
+                }
+
+                val jsonProductosStr = obtenerJsonApi("productos")
+                val jsonArrayProductos = JSONArray(jsonProductosStr)
+                val tempProductosStr = mutableListOf<String>()
+                val tempProductosMap = mutableMapOf<Int, ProductoInfo>()
+                for (i in 0 until jsonArrayProductos.length()) {
+                    val obj = jsonArrayProductos.getJSONObject(i)
+                    val id = obj.getInt("id_producto")
+                    val nombre = obj.getString("nombre")
+                    val precio = obj.getDouble("precio")
+
+                    tempProductosStr.add("$id - $nombre (Q$precio)")
+                    tempProductosMap[id] = ProductoInfo(id, nombre, precio)
+                }
+
+                runOnUiThread {
+                    listaClientes.clear()
+                    listaClientes.addAll(tempClientes)
+                    spinnerClientes.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, listaClientes))
+
+                    listaVendedores.clear()
+                    listaVendedores.addAll(tempVendedores)
+                    spinnerVendedores.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, listaVendedores))
+
+                    listaProductosPresentacion.clear()
+                    listaProductosPresentacion.addAll(tempProductosStr)
+                    mapaProductos.clear()
+                    mapaProductos.putAll(tempProductosMap)
+                    spinnerProductos.setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, listaProductosPresentacion))
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Error API Wi-Fi: " + e.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun cargarDatosDesdeBD() {
@@ -135,7 +246,6 @@ class MainActivity : AppCompatActivity() {
                 Class.forName("com.mysql.jdbc.Driver")
                 val conn: Connection = DriverManager.getConnection(url, user, pass)
 
-                // 1. Cargar Clientes
                 val stmtClientes = conn.createStatement()
                 val rsClientes = stmtClientes.executeQuery("SELECT id_cliente, nombre, apellido FROM clientes ORDER BY nombre ASC")
                 val tempClientes = mutableListOf<String>()
@@ -146,7 +256,6 @@ class MainActivity : AppCompatActivity() {
                     tempClientes.add("$id - $nombre $apellido")
                 }
 
-                // 2. Cargar Vendedores/Empleados
                 val stmtEmpleados = conn.createStatement()
                 val rsEmpleados = stmtEmpleados.executeQuery("SELECT id_empleado, nombre, apellido FROM empleados ORDER BY nombre ASC")
                 val tempVendedores = mutableListOf<String>()
@@ -157,7 +266,6 @@ class MainActivity : AppCompatActivity() {
                     tempVendedores.add("$id - $nombre $apellido")
                 }
 
-                // 3. Cargar Productos y Precios
                 val stmtProductos = conn.createStatement()
                 val rsProductos = stmtProductos.executeQuery("SELECT id_producto, nombre, precio FROM ventas_productos ORDER BY nombre ASC")
                 val tempProductosStr = mutableListOf<String>()
@@ -173,7 +281,6 @@ class MainActivity : AppCompatActivity() {
 
                 conn.close()
 
-                // Actualizar la interfaz en el hilo principal
                 runOnUiThread {
                     listaClientes.clear()
                     listaClientes.addAll(tempClientes)
@@ -194,6 +301,75 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
                 runOnUiThread {
                     Toast.makeText(this@MainActivity, "Error al cargar catálogos: " + e.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun guardarPedidoDesdeAPI() {
+        val clienteSeleccionado = spinnerClientes.text.toString()
+        val vendedorSeleccionado = spinnerVendedores.text.toString()
+        val pagoSeleccionado = spinnerPago.text.toString()
+        val observaciones = txtObservaciones.text.toString()
+
+        if (detallesGuardados.isEmpty() || clienteSeleccionado.isEmpty() || vendedorSeleccionado.isEmpty() || pagoSeleccionado.isEmpty()) {
+            Toast.makeText(this, "Faltan datos requeridos (Cliente, Vendedor, Pago o Productos)", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val idCliente = clienteSeleccionado.split(" - ")[0].toInt()
+        val idVendedor = vendedorSeleccionado.split(" - ")[0].toInt()
+
+        executor.execute {
+            try {
+                val jsonPedido = JSONObject()
+                jsonPedido.put("idCliente", idCliente)
+                jsonPedido.put("idEmpleado", idVendedor)
+                jsonPedido.put("total", totalPedido)
+                jsonPedido.put("metodoPago", pagoSeleccionado)
+                jsonPedido.put("observaciones", observaciones)
+
+                val arrayDetalles = JSONArray()
+                for (detalle in detallesGuardados) {
+                    val objDetalle = JSONObject()
+                    objDetalle.put("idProducto", detalle.idProducto)
+                    objDetalle.put("cantidad", detalle.cantidad)
+                    objDetalle.put("precio", detalle.precio)
+                    arrayDetalles.put(objDetalle)
+                }
+                jsonPedido.put("detalles", arrayDetalles)
+
+                val url = URL(urlApiWifi + "guardarPedido")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json; utf-8")
+                conn.setRequestProperty("Accept", "application/json")
+                conn.doOutput = true
+                conn.connectTimeout = 5000
+                conn.readTimeout = 5000
+
+                val os = conn.outputStream
+                val input = jsonPedido.toString().toByteArray(charset("utf-8"))
+                os.write(input, 0, input.size)
+                os.flush()
+                os.close()
+
+                val responseCode = conn.responseCode
+                if (responseCode == 200 || responseCode == 201) {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "¡Pedido de Q$totalPedido guardado por Wi-Fi!", Toast.LENGTH_LONG).show()
+                        limpiarFormulario()
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "Error en servidor (Código $responseCode)", Toast.LENGTH_LONG).show()
+                    }
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Error al guardar vía Wi-Fi: " + e.message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -249,7 +425,7 @@ class MainActivity : AppCompatActivity() {
                 conn.close()
 
                 runOnUiThread {
-                    Toast.makeText(this@MainActivity, "¡Pedido de Q$totalPedido guardado!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "¡Pedido de Q$totalPedido guardado por USB!", Toast.LENGTH_LONG).show()
                     limpiarFormulario()
                 }
 
